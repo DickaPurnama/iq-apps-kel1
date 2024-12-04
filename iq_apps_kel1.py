@@ -3,7 +3,7 @@ import streamlit as st
 import pandas as pd
 import os
 from io import BytesIO
-import xlwt  # Library untuk membuat file Excel dalam format .xls
+from openpyxl import Workbook  # Library untuk membuat file Excel dalam format .xlsx
 from datetime import datetime  # Untuk menangani input tanggal
 
 # *Validasi file model*
@@ -30,7 +30,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
 
 # *Input data pengguna*
 col1, col2 = st.columns(2)
@@ -99,40 +98,39 @@ if st.button("🔍 Hitung Nilai IQ"):
     except Exception as e:
         st.error(f"⚠ Terjadi kesalahan: {str(e)}")
 
-# *Fungsi untuk menyimpan data ke file Excel (.xls) dalam memori*
-def save_to_excel_xls_in_memory(data):
+# *Fungsi untuk menyimpan data ke file Excel (.xlsx) dalam memori*
+def save_to_excel_xlsx_in_memory(data):
     output = BytesIO()
-    workbook = xlwt.Workbook()
-    sheet = workbook.add_sheet("Hasil Prediksi")
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = "Hasil Prediksi"
 
     # Menuliskan header
-    for col_num, column_title in enumerate(data.columns):
-        sheet.write(0, col_num, column_title)
+    sheet.append(data.columns.tolist())
 
     # Menuliskan data baris demi baris
-    for row_num, row in enumerate(data.values, start=1):
-        for col_num, cell_value in enumerate(row):
-            sheet.write(row_num, col_num, cell_value)
+    for row in data.values:
+        sheet.append(row.tolist())
 
     workbook.save(output)
     output.seek(0)
     return output
 
-# *Tombol untuk mengunduh hasil prediksi dalam bentuk Excel (.xls)*
+# *Tombol untuk mengunduh hasil prediksi dalam bentuk Excel (.xlsx)*
 if st.session_state["histori_prediksi"]:
     try:
         # Konversi histori prediksi ke DataFrame
         df_hasil = pd.DataFrame(st.session_state["histori_prediksi"])
 
-        # Simpan ke file Excel (.xls) dalam memori
-        excel_file = save_to_excel_xls_in_memory(df_hasil)
+        # Simpan ke file Excel (.xlsx) dalam memori
+        excel_file = save_to_excel_xlsx_in_memory(df_hasil)
 
-        # Unduh file dalam format .xls
+        # Unduh file dalam format .xlsx
         st.download_button(
-            label="💾 Download Hasil Prediksi (.xls)",
+            label="💾 Download Hasil Prediksi (.xlsx)",
             data=excel_file,
-            file_name="hasil_prediksi.xls",
-            mime="application/vnd.ms-excel"
+            file_name="hasil_prediksi.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
     except Exception as e:
